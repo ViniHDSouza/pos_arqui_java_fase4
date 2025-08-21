@@ -1,0 +1,764 @@
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\docker-compose.yml === 
+version: '3.8'
+
+services:
+  estoque-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: estoque-api-dev
+    depends_on:
+      db-estoque:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-estoque:3306/estoque_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: estoque_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_estoque
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - pedido-net
+
+networks:
+  pedido-net:
+    external: true 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\.mvn\wrapper\maven-wrapper.properties === 
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+wrapperVersion=3.3.2
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.10/apache-maven-3.9.10-bin.zip
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\TechChallenge4aFaseEstoqueApplication.java === 
+package br.com.fiap;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class TechChallenge4aFaseEstoqueApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(TechChallenge4aFaseEstoqueApplication.class, args);
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\controller\EstoqueApiController.java === 
+package br.com.fiap.msestoque.adapter.controller;
+
+import br.com.fiap.msestoque.adapter.controller.request.BaixaEstoqueRequestDTO;
+import br.com.fiap.msestoque.adapter.controller.response.EstoqueResponseDTO;
+import br.com.fiap.msestoque.core.usecase.BaixaEstoqueUseCase;
+import br.com.fiap.msestoque.core.usecase.ConsultaEstoqueUseCase;
+import br.com.fiap.msestoque.core.usecase.EstornarEstoqueUseCase;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/estoque")
+@RequiredArgsConstructor
+public class EstoqueApiController implements EstoqueController{
+
+    private final BaixaEstoqueUseCase baixaEstoqueUseCase;
+    private final EstornarEstoqueUseCase estornarEstoqueUseCase;
+    private final ConsultaEstoqueUseCase consultaEstoqueUseCase;
+
+    @PutMapping("/baixa")
+    @Override
+    public ResponseEntity<Void> baixaEstoque(@RequestBody BaixaEstoqueRequestDTO request) {
+        try {
+            baixaEstoqueUseCase.executar(request.sku(), request.quantidade());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/estorno")
+    @Override
+    public ResponseEntity<Void> estornoEstoque(@RequestBody BaixaEstoqueRequestDTO request) {
+        try {
+            estornarEstoqueUseCase.executar(request.sku(), request.quantidade());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/consulta/{sku}")
+    public ResponseEntity<EstoqueResponseDTO> consultarEstoque(@PathVariable String sku) {
+        int quantidade = consultaEstoqueUseCase.executar(sku);
+        return ResponseEntity.ok(new EstoqueResponseDTO(sku, quantidade));
+    }
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\controller\EstoqueController.java === 
+package br.com.fiap.msestoque.adapter.controller;
+
+import br.com.fiap.msestoque.adapter.controller.request.BaixaEstoqueRequestDTO;
+import br.com.fiap.msestoque.adapter.controller.response.EstoqueResponseDTO;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+public interface EstoqueController {
+
+    public ResponseEntity<Void> baixaEstoque(BaixaEstoqueRequestDTO request);
+
+    public ResponseEntity<Void> estornoEstoque(@RequestBody BaixaEstoqueRequestDTO request);
+
+    public ResponseEntity<EstoqueResponseDTO> consultarEstoque(@PathVariable String sku);
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\controller\request\BaixaEstoqueRequestDTO.java === 
+package br.com.fiap.msestoque.adapter.controller.request;
+
+public record BaixaEstoqueRequestDTO(
+        String sku,
+        int quantidade
+) {} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\controller\response\EstoqueResponseDTO.java === 
+package br.com.fiap.msestoque.adapter.controller.response;
+
+public record EstoqueResponseDTO(
+        String sku,
+        int quantidade) {
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\exception\ControllerExceptionHandler.java === 
+package br.com.fiap.msestoque.adapter.exception;
+
+import br.com.fiap.msestoque.core.exception.EstoqueException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@ControllerAdvice
+public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    protected ResponseEntity<Object> handleConstraintViolationException(
+            jakarta.validation.ConstraintViolationException ex, WebRequest request) {
+
+        ProblemType problemType = ProblemType.DADOS_INVALIDOS;
+        String detail = "Um ou mais campos estão inválidos. Faça o preenchimento correto e tente novamente.";
+
+        List<Problem.Field> problemFields = ex.getConstraintViolations().stream()
+                .map(violation -> Problem.Field.builder()
+                        .name(violation.getPropertyPath().toString())
+                        .userMessage(violation.getMessage())
+                        .build())
+                .toList();
+
+        Problem problem = createProblemBuilder(HttpStatus.BAD_REQUEST, problemType, detail)
+                .userMessage(detail)
+                .fields(problemFields)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
+        ProblemType problemType = ProblemType.DADOS_INVALIDOS;
+        String detail = "Um ou mais campos estão inválidos. Faça o preenchimento correto e tente novamente.";
+
+        BindingResult bindingResult = ex.getBindingResult();
+        List<Problem.Field> problemFilds = bindingResult
+                .getFieldErrors()
+                .stream()
+                .map(problemFild -> Problem.Field.builder()
+                        .name(problemFild.getField())
+                        .userMessage(problemFild.getDefaultMessage())
+                        .build()).toList();
+
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .fields(problemFilds)
+                .build();
+
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+//
+    @ExceptionHandler(EstoqueException.class)
+    public ResponseEntity<Object> handleEstoqueExceptionException(EstoqueException e, WebRequest request){
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ProblemType problemaType = ProblemType.RECURSO_NAO_ENCONTRADO;
+        String detail = e.getMessage();
+        Problem problema = createProblemBuilder(status,problemaType, detail)
+                .userMessage(detail)
+                .build();
+        return handleExceptionInternal(e, problema, new HttpHeaders(), status, request);
+    }
+
+    private Problem.ProblemBuilder createProblemBuilder(HttpStatusCode status, ProblemType problemaType, String detail){
+
+        return Problem.builder()
+                .status(status.value())
+                .type(problemaType.getUri())
+                .title(problemaType.getTitle())
+                .timestamp(LocalDateTime.now())
+                .detail(detail);
+    }
+
+    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        ProblemType problemaType = ProblemType.RECURSO_NAO_ENCONTRADO;
+        String detail = String.format("O recurso %s, que você tentou acessar, é inexistente.",ex.getRequestURL());
+
+        Problem problem = createProblemBuilder(status, problemaType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\exception\Problem.java === 
+package br.com.fiap.msestoque.adapter.exception;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Builder
+@Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Problem {
+
+    private Integer status;
+    private String type;
+    private String title;
+    private String detail;
+
+    private String userMessage;
+    private LocalDateTime timestamp;
+    private List<Field> fields;
+
+    @Getter
+    @Builder
+    public static class Field{
+        private String name;
+        private String userMessage;
+    }
+
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\exception\ProblemType.java === 
+package br.com.fiap.msestoque.adapter.exception;
+
+import lombok.Getter;
+
+@Getter
+public enum ProblemType {
+    RECURSO_NAO_ENCONTRADO("/recurso-nao-encontrado", "Recurso não encontrado"),
+    ENTIDADE_EM_USO("/entidade-em-uso", "Entidade em uso"),
+    ERRO_NEGOCIO("/erro-negocio", "Violação de regra de negócio"),
+    MENSAGEM_INCOMPREENSIVEL("/mensagem-incompreensivel", "Mensagem incompreensivel"),
+    MENSAGEM_CAMPO_IGNORADO("/mensagem-campo-ignorado", "Mensagem campo ignorado"),
+    MENSAGEM_CAMPO_INEXISTENTE("/mensagem-campo-inexistente", "Mensagem campo inexistente"),
+    PARAMETRO_INVALIDO("/parametro-invalido", "Parâmetro inválido"),
+    ERRO_DE_SISTEMA("/erro-de-sistema", "Erro de sistema"),
+    DADOS_INVALIDOS("/dados-invalidos", "Dados inválidos"),
+    SKU_JACADASTRADO("/sku-ja-cadastrado", "SKU Já cadastrado"),
+    CPF_INVALIDOS("/cpf-invalido", "CPF Ivalido"),
+    CPF_JA_CADASTRADO("/cpf-ja-cadastrado", "CPF Já Cadastrado"),
+    ;
+
+    private String title;
+    private String uri;
+
+    ProblemType(String path, String title){
+        this.uri = "http://www.fiap.com.br"+path;
+        this.title = title;
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\gateway\RepositorioDeProdutoJPAGatewayImpl.java === 
+package br.com.fiap.msestoque.adapter.gateway;
+
+import br.com.fiap.msestoque.adapter.mapper.EstoqueMapper;
+import br.com.fiap.msestoque.adapter.persistence.entity.EstoqueEntity;
+import br.com.fiap.msestoque.adapter.persistence.repository.EstoqueRepository;
+import br.com.fiap.msestoque.core.domain.Estoque;
+import br.com.fiap.msestoque.core.gateways.EstoqueGateway;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
+@Component
+public class RepositorioDeProdutoJPAGatewayImpl implements EstoqueGateway {
+
+    private final EstoqueRepository estoqueRepository;
+    private final EstoqueMapper estoqueMapper;
+
+    public RepositorioDeProdutoJPAGatewayImpl(EstoqueRepository estoqueRepository, EstoqueMapper estoqueMapper) {
+        this.estoqueRepository = estoqueRepository;
+        this.estoqueMapper = estoqueMapper;
+    }
+
+    @Override
+    public Optional<Estoque> findBySku(String sku) {
+        EstoqueEntity estoqueEntity = estoqueRepository.findBySku(sku);
+        return Optional.ofNullable(estoqueEntity)
+                .map(estoqueMapper::toEstoque);
+    }
+
+    @Override
+    public Estoque save(Estoque estoque) {
+        EstoqueEntity estoqueEntity = estoqueMapper.toEstoqueEntity(estoque);
+        EstoqueEntity estoqueSalvo = estoqueRepository.save(estoqueEntity);
+        return estoqueMapper.toEstoque(estoqueSalvo);
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\mapper\EstoqueMapper.java === 
+package br.com.fiap.msestoque.adapter.mapper;
+
+import br.com.fiap.msestoque.adapter.persistence.entity.EstoqueEntity;
+import br.com.fiap.msestoque.core.domain.Estoque;
+import org.springframework.stereotype.Component;
+
+@Component
+public class EstoqueMapper {
+
+    public Estoque toEstoque(EstoqueEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        return new Estoque(
+            entity.getId(),
+            entity.getSku(),
+            entity.getQuantidade(),
+            entity.getAtualizadoEm()
+        );
+    }
+
+    public EstoqueEntity toEstoqueEntity(Estoque domain) {
+        if (domain == null) {
+            return null;
+        }
+
+        return EstoqueEntity.builder()
+            .id(domain.getId())
+            .sku(domain.getSku())
+            .quantidade(domain.getQuantidade())
+            .atualizadoEm(domain.getAtualizadoEm())
+            .build();
+    }
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\persistence\entity\EstoqueEntity.java === 
+package br.com.fiap.msestoque.adapter.persistence.entity;
+
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "estoque", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_produto_sku", columnNames = {"sku"})
+})
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Builder
+public class EstoqueEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String sku;
+
+    @Column(nullable = false)
+    private Integer quantidade;
+
+    @Column(nullable = false)
+    private LocalDateTime atualizadoEm;
+
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\adapter\persistence\repository\EstoqueRepository.java === 
+package br.com.fiap.msestoque.adapter.persistence.repository;
+
+import br.com.fiap.msestoque.adapter.persistence.entity.EstoqueEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EstoqueRepository extends JpaRepository<EstoqueEntity, Long> {
+    EstoqueEntity findBySku(String sku);
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\domain\Estoque.java === 
+package br.com.fiap.msestoque.core.domain;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class Estoque {
+    private Long id;
+    private String sku;
+    private Integer quantidade;
+    private LocalDateTime atualizadoEm;
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\exception\EstoqueException.java === 
+package br.com.fiap.msestoque.core.exception;
+
+public class EstoqueException extends RuntimeException {
+    public EstoqueException(String message) {
+        super(message);
+    }
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\gateways\EstoqueGateway.java === 
+package br.com.fiap.msestoque.core.gateways;
+
+import br.com.fiap.msestoque.core.domain.Estoque;
+
+import java.util.Optional;
+
+public interface EstoqueGateway {
+    Optional<Estoque> findBySku(String sku);
+    Estoque save(Estoque estoque);
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\usecase\BaixaEstoqueUseCase.java === 
+package br.com.fiap.msestoque.core.usecase;
+
+import br.com.fiap.msestoque.core.exception.EstoqueException;
+import br.com.fiap.msestoque.core.gateways.EstoqueGateway;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class BaixaEstoqueUseCase {
+
+    private final EstoqueGateway estoqueGateway;
+
+    public void executar(String sku, Integer quantidade) {
+        if (quantidade == null || quantidade <= 0) {
+            throw new EstoqueException("Quantidade deve ser maior que zero.");
+        }
+        if (sku == null || sku.isEmpty()) {
+            throw new EstoqueException("SKU não pode ser nulo ou vazio.");
+        }
+        var estoque = estoqueGateway.findBySku(sku)
+                .orElseThrow(() -> new EstoqueException("Estoque não encontrado para o SKU: " + sku));
+
+        int novaQuantidade = estoque.getQuantidade() - quantidade;
+        if (novaQuantidade < 0) {
+            throw new EstoqueException("Estoque insuficiente para o SKU: " + sku);
+        }
+        estoque.setQuantidade(novaQuantidade);
+        estoque.setAtualizadoEm(LocalDateTime.now());
+        estoqueGateway.save(estoque);
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\usecase\ConsultaEstoqueUseCase.java === 
+package br.com.fiap.msestoque.core.usecase;
+
+import br.com.fiap.msestoque.core.exception.EstoqueException;
+import br.com.fiap.msestoque.core.gateways.EstoqueGateway;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class ConsultaEstoqueUseCase {
+
+    private final EstoqueGateway estoqueGateway;
+
+    public int executar(String sku) {
+
+        if (sku == null || sku.isEmpty()) {
+            throw new EstoqueException("SKU não pode ser nulo ou vazio.");
+        }
+        var estoque = estoqueGateway.findBySku(sku)
+                .orElseThrow(() -> new EstoqueException("Estoque não encontrado para o SKU: " + sku));
+
+        return estoque.getQuantidade();
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\java\br\com\fiap\msestoque\core\usecase\EstornarEstoqueUseCase.java === 
+package br.com.fiap.msestoque.core.usecase;
+
+import br.com.fiap.msestoque.core.exception.EstoqueException;
+import br.com.fiap.msestoque.core.gateways.EstoqueGateway;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class EstornarEstoqueUseCase {
+
+    private final EstoqueGateway estoqueGateway;
+
+    public void executar(String sku, Integer quantidade) {
+        if (quantidade == null) {
+            throw new EstoqueException("Quantidade não pode ser nulo.");
+        }
+        if (sku == null || sku.isEmpty()) {
+            throw new EstoqueException("SKU não pode ser nulo ou vazio.");
+        }
+        var estoque = estoqueGateway.findBySku(sku)
+                .orElseThrow(() -> new EstoqueException("Estoque não encontrado para o SKU: " + sku));
+
+        int novaQuantidade = estoque.getQuantidade() + quantidade;
+
+        estoque.setQuantidade(novaQuantidade);
+        estoque.setAtualizadoEm(LocalDateTime.now());
+        estoqueGateway.save(estoque);
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\main\resources\application.properties === 
+spring.application.name=MS estoque
+
+spring.datasource.url=jdbc:mysql://localhost:3309/estoque_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring.datasource.username=estoque_user
+spring.datasource.password=secure_password_estoque
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+spring.flyway.locations=classpath:db
+spring.flyway.create-schemas=true
+spring.flyway.baseline-on-migrate=true
+logging.level.org.flywaydb=DEBUG
+
+logging.level.com.zaxxer.hikari=ERROR
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+logging.level.org.flywaydb.core.internal.sqlscript=DEBUG
+logging.level.org.flywaydb.core.internal.database=DEBUG
+
+
+server.port=8085 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\test\java\br\com\fiap\TechChallenge4aFaseEstoqueApplicationTests.java === 
+package br.com.fiap;
+
+//@SpringBootTest
+class TechChallenge4aFaseEstoqueApplicationTests {
+
+    //@Test
+    void contextLoads() {
+    }
+
+}
+ 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\test\java\br\com\fiap\msestoque\adapter\controller\EstoqueApiControllerITTest.java === 
+package br.com.fiap.msestoque.adapter.controller;
+
+import br.com.fiap.TechChallenge4aFaseEstoqueApplication;
+import br.com.fiap.msestoque.adapter.controller.request.BaixaEstoqueRequestDTO;
+import br.com.fiap.msestoque.adapter.persistence.entity.EstoqueEntity;
+import br.com.fiap.msestoque.adapter.persistence.repository.EstoqueRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest(classes = TechChallenge4aFaseEstoqueApplication.class)
+@AutoConfigureMockMvc
+@Transactional
+@ActiveProfiles("test")
+@DisplayName("Testes de Integração - EstoqueApiController")
+class EstoqueApiControllerITTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private EstoqueRepository estoqueRepository;
+
+    private static final String SKU_TESTE = "SKU001";
+    private static final int QUANTIDADE_INICIAL = 10;
+
+    @BeforeEach
+    @DisplayName("Configura o ambiente de teste cadastrando um produto para ser atualizado")
+    void setup() {
+        EstoqueEntity estoqueEntity = EstoqueEntity.builder()
+            .sku(SKU_TESTE)
+            .quantidade(QUANTIDADE_INICIAL)
+            .atualizadoEm(LocalDateTime.now())
+            .build();
+            estoqueRepository.save(estoqueEntity);
+    }
+
+    @Test
+    @DisplayName("Deve realizar baixa no estoque com sucesso")
+    void baixaComSucesso() throws Exception {
+
+        BaixaEstoqueRequestDTO baixaEstoqueRequestDTO = new BaixaEstoqueRequestDTO(SKU_TESTE,QUANTIDADE_INICIAL);
+
+        mockMvc.perform(put("/estoque/baixa")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(baixaEstoqueRequestDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Deve realizar estorno no estoque com sucesso")
+    void estornoComSucesso() throws Exception {
+
+        BaixaEstoqueRequestDTO baixaEstoqueRequestDTO = new BaixaEstoqueRequestDTO(SKU_TESTE,QUANTIDADE_INICIAL);
+
+        mockMvc.perform(put("/estoque/estorno")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(baixaEstoqueRequestDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Deve realizar consulta no estoque com sucesso")
+    void consultarEstoqueComSucesso() throws Exception {
+        mockMvc.perform(get("/estoque/consulta/{sku}", SKU_TESTE)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sku").value(SKU_TESTE))
+                .andExpect(jsonPath("$.quantidade").value(QUANTIDADE_INICIAL));
+    }
+
+} 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\src\test\resources\application-test.properties === 
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\target\classes\application.properties === 
+spring.application.name=MS estoque
+
+spring.datasource.url=jdbc:mysql://localhost:3309/estoque_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring.datasource.username=estoque_user
+spring.datasource.password=secure_password_estoque
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+spring.flyway.locations=classpath:db
+spring.flyway.create-schemas=true
+spring.flyway.baseline-on-migrate=true
+logging.level.org.flywaydb=DEBUG
+
+logging.level.com.zaxxer.hikari=ERROR
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+logging.level.org.flywaydb.core.internal.sqlscript=DEBUG
+logging.level.org.flywaydb.core.internal.database=DEBUG
+
+
+server.port=8085 
+=== C:\Users\Vinicius\Documents\ESTUDO\organizado\posgraduacao\fiap_arquiteturajava\FASE 4\projeto_grupo\tech-challenge-4a-fase_estoque\target\test-classes\application-test.properties === 
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true 
+=== Dockerfile === 
+FROM maven:3.9-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+COPY src ./src
+
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+ 

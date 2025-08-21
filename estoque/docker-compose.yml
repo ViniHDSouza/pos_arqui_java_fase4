@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  estoque-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: estoque-api-dev
+    depends_on:
+      db-estoque:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-estoque:3306/estoque_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: estoque_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_estoque
+    networks:
+      - pedido-net
+
+networks:
+  pedido-net:
+    external: true

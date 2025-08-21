@@ -1,0 +1,10 @@
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU001', 150);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU002', 85);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU003', 120);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU004', 45);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU005', 75);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU006', 200);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU007', 110);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU008', 30);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU009', 180);
+INSERT INTO estoque (sku, quantidade) VALUES ('SKU010', 60);

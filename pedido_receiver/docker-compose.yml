@@ -1,0 +1,19 @@
+services:
+
+  pedido-reciver-api:
+    build: .
+    container_name: ms-pedido-reciver-api-dev
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pedido-reciver:3310/pedido_reciver_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pedido_reciver_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pedido_reciver
+    networks:
+      - pedido-net
+
+volumes:
+  db_data_pedido_reciver:
+
+networks:
+  pedido-net:

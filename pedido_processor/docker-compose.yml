@@ -1,0 +1,23 @@
+services:
+
+  pedido-processor-api:
+    build: .
+    container_name: pedido-processor-api-dev
+    depends_on:
+      db-pedido-processor:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pedido-processor:3311/pedido_processor_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pedido_processor_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pedido_processor
+    restart: on-failure
+    networks:
+      - pedido-net
+
+volumes:
+  db_data_pedido_processor:
+
+networks:
+  pedido-net:

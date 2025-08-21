@@ -1,0 +1,345 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper_kafka_fiap
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  broker:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: broker
+    container_name: broker_kafka_fiap
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    hostname: kafka-ui
+    container_name: kafka-ui_kafka_fiap
+    depends_on:
+      broker:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: broker:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  db-pedido-reciver:
+    image: mysql:8.0
+    container_name: db-pedido-reciver
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: pedido_reciver_db
+      MYSQL_USER: pedido_reciver_user
+      MYSQL_PASSWORD: secure_password_pedido_reciver
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3310:3306"
+    volumes:
+      - db_data_pedido_reciver:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  db-pedido-processor:
+    image: mysql:8.0
+    container_name: db-pedido-processor
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: pedido_processor_db
+      MYSQL_USER: pedido_processor_user
+      MYSQL_PASSWORD: secure_password_pedido_processor
+      MYSQL_ROOT_PASSWORD: secure_root_password_pedido_processor
+    ports:
+      - "3311:3306"
+    volumes:
+      - db_data_pedido_processor:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psecure_root_password_pedido_processor"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  db-produto:
+    image: mysql:8.0
+    container_name: db-produto
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: produto_db
+      MYSQL_USER: produto_user
+      MYSQL_PASSWORD: secure_password_produto
+      MYSQL_ROOT_PASSWORD: secure_root_password_produto
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data_produto:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psecure_root_password_produto"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
+
+  db-cliente:
+    image: mysql:8.0
+    container_name: db-cliente
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cliente_db
+      MYSQL_USER: cliente_user
+      MYSQL_PASSWORD: secure_password_cliente
+      MYSQL_ROOT_PASSWORD: secure_root_password_cliente
+    ports:
+      - "3320:3306"
+    volumes:
+      - db_data_cliente:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psecure_root_password_cliente"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
+
+  db-estoque:
+    image: mysql:8.0
+    container_name: db-estoque
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: estoque_db
+      MYSQL_USER: estoque_user
+      MYSQL_PASSWORD: secure_password_estoque
+      MYSQL_ROOT_PASSWORD: secure_root_password_estoque
+    ports:
+      - "3309:3306"
+    volumes:
+      - db_data_estoque:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psecure_root_password_estoque"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
+
+  db-pagamento:
+    image: mysql:8.0
+    container_name: db-pagamento
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: pagamento_db
+      MYSQL_USER: pagamento_user
+      MYSQL_PASSWORD: secure_password_pagamento
+      MYSQL_ROOT_PASSWORD: secure_root_password_pagamento
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3308:3306"
+    volumes:
+      - db_data_pagamento:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-psecure_root_password_pagamento"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  pagamento-api:
+    image: vinihds/ms-pagamento:v0.0.1
+    container_name: ms-pagamento-api-dev
+    depends_on:
+      db-pagamento:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pagamento:3306/pagamento_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pagamento_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pagamento
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  cliente-api:
+    image: vinihds/ms-cliente:v0.0.1
+    container_name: ms-cliente-api-dev
+    depends_on:
+      db-cliente:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-cliente:3306/cliente_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: cliente_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_cliente
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  produto-api:
+    image: vinihds/ms-produto:v0.0.1
+    container_name: ms-produto-api-dev
+    depends_on:
+      db-produto:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-produto:3306/produto_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: produto_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_produto
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  estoque-api:
+    image: vinihds/ms-estoque:v0.0.1
+    container_name: ms-estoque-api-dev
+    depends_on:
+      db-estoque:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-estoque:3306/estoque_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: estoque_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_estoque
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  pedido-reciver-api:
+    image: vinihds/ms-pedido-reciver:v0.0.4
+    container_name: ms-pedido-reciver-api-dev
+    depends_on:
+      db-pedido-reciver:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pedido-reciver:3306/pedido_reciver_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pedido_reciver_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pedido_reciver
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: broker:29092
+      APP_KAFKA_TOPIC_NAME: topico-pedido-reciver
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  pedido-processor-api:
+    image: vinihds/ms-pedido-processor:v0.0.2
+    container_name: ms-pedido-processor-api-dev
+    depends_on:
+      broker:
+        condition: service_healthy
+      db-pedido-processor:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pedido-processor:3306/pedido_processor_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pedido_processor_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pedido_processor
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SERVICES_CLIENTE: http://ms-cliente-api-dev:8084
+      SERVICES_PRODUTO: http://ms-produto-api-dev:8081
+      SERVICES_PAGAMENTO: http://ms-pagamento-api-dev:8083
+      SERVICES_ESTOQUE: http://ms-estoque-api-dev:8085
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/actuator/health || exit 1"]
+      interval: 45s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
+
+volumes:
+  db_data_pedido_reciver:
+  db_data_pedido_processor:
+  db_data_produto:
+  db_data_cliente:
+  db_data_estoque:
+  db_data_pagamento:
+
+networks:
+  app-network:
+    driver: bridge

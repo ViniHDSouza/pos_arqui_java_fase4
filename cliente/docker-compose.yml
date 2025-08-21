@@ -1,0 +1,20 @@
+services:
+
+  cliente-api:
+    build: .
+    container_name: ms-cliente-api-dev
+    depends_on:
+      db-cliente:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-cliente:3320/cliente_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: cliente_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_cliente
+    networks:
+      - pedido-net
+volumes:
+  db_data_cliente:
+networks:
+  pedido-net:

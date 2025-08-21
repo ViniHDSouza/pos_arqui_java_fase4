@@ -1,0 +1,126 @@
+{
+	"info": {
+		"_postman_id": "c4b002e5-d41e-46f5-8a2b-2b76ad630a7c",
+		"name": "FIAP - Meu TechChalange - FASE 4 | Tech Challenge Fase 4 - Cliente",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16814452"
+	},
+	"item": [
+		{
+			"name": "Criar Cliente",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nome\": \"João Silva\",\n    \"cpf\": \"123.456.789-96\",\n    \"dataNascimento\": \"1990-01-01\",\n    \"endereco\": {\n        \"logradouro\": \"Rua Exemplo\",\n        \"numero\": \"123\",\n        \"complemento\": \"Apto 45\",\n        \"bairro\": \"Centro\",\n        \"cidade\": \"São Paulo\",\n        \"estado\": \"SP\",\n        \"cep\": \"12.345-678\"\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8081/clientes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"clientes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Buscar Cliente por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/clientes/23",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"clientes",
+						"23"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atualizar Cliente",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nome\": \"João Silva 2\",\n    \"cpf\": \"123.456.789-01\",\n    \"dataNascimento\": \"1990-05-15\",\n    \"endereco\": {\n        \"logradouro\": \"Rua das Flores2\",\n        \"numero\": \"1231\",\n        \"complemento\": \"Apto 1011\",\n        \"bairro\": \"Centro1\",\n        \"cidade\": \"São Paulo1\",\n        \"estado\": \"RJ\",\n        \"cep\": \"01.234-567\"\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8081/clientes/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"clientes",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deletar Cliente",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/clientes/6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"clientes",
+						"6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar Todos os Clientes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/clientes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"clientes"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

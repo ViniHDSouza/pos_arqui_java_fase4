@@ -1,0 +1,44 @@
+services:
+  db-pagamento:
+    image: mysql:8.0
+    container_name: db-pagamento
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "db-pagamento", "-u$MYSQL_USER", "-p$MYSQL_PASSWORD"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    environment:
+      MYSQL_DATABASE: pagamento_db
+      MYSQL_USER: pagamento_user
+      MYSQL_PASSWORD: secure_password_pagamento
+      MYSQL_ROOT_PASSWORD: secure_root_password_pagamento
+    ports:
+      - "3308:3306"
+    volumes:
+      - db_data_pagamento:/var/lib/mysql
+    networks:
+      - pedido-net
+
+  pagamento-api:
+    build: .
+    container_name: pagamento-api-dev
+    depends_on:
+      db-pagamento:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db-pagamento:3306/pagamento_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: pagamento_user
+      SPRING_DATASOURCE_PASSWORD: secure_password_pagamento
+    restart: on-failure
+    networks:
+      - pedido-net
+
+volumes:
+  db_data_pagamento:
+
+networks:
+  pedido-net:

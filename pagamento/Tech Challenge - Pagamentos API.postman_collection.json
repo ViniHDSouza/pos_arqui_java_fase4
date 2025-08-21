@@ -1,0 +1,231 @@
+{
+	"info": {
+		"_postman_id": "d29d3771-3ec8-475e-baf3-372ae0dd8bf8",
+		"name": "Tech Challenge - Pagamentos API",
+		"description": "Coleção de testes para API de Pagamentos",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16814452",
+		"_collection_link": "https://api555-6503.postman.co/workspace/FIAP~ca19283b-5465-4867-8200-96f36e770fa4/collection/16814452-d29d3771-3ec8-475e-baf3-372ae0dd8bf8?action=share&source=collection_link&creator=16814452"
+	},
+	"item": [
+		{
+			"name": "1. Processar Pagamento",
+			"item": [
+				{
+					"name": "Criar novo pagamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pedidoId\": 1,\n    \"clienteId\": 101,\n    \"numeroCartao\": \"1234567890123456\",\n    \"valor\": 100.00\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Consultas",
+			"item": [
+				{
+					"name": "Buscar por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/952",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"952"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por PedidoId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/pedido/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"pedido",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar por Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/status/PENDENTE",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"status",
+								"PENDENTE"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Estorno",
+			"item": [
+				{
+					"name": "Estornar Pagamento",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/1/estorno",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"1",
+								"estorno"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Callback",
+			"item": [
+				{
+					"name": "Callback de Pagamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transacaoExternaId\": \"TXN_02ED22AC\",\n    \"status\": \"APROVADO\",\n    \"motivo\": \"Pagamento processado com sucesso\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/callback",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"callback"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Health Check",
+			"item": [
+				{
+					"name": "Verificar Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8083/api/pagamentos/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8083",
+							"path": [
+								"api",
+								"pagamentos",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8083",
+			"type": "string"
+		}
+	]
+}
